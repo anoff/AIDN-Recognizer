@@ -72,12 +72,24 @@ class SelectorBIC(ModelSelector):
         """ select the best model for self.this_word based on
         BIC score for n between self.min_n_components and self.max_n_components
 
+            L is the likelihood of the fitted model
+            p is the number of parameters,
+            N is the number of data points
         :return: GaussianHMM object
         """
+        # implement model selection based on BIC scores
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-        # TODO implement model selection based on BIC scores
-        raise NotImplementedError
+        N = self.X.shape[0]
+        best_bic = float('Inf')
+        best_model = NULL
+        for p in range(self.min_n_components, self.max_n_components):
+            model = self.base_model(num_states=n)
+            logL = model.score(self.X, self.lengths)
+            bic = −2 * logL + p * np.log(N)
+            if bic > best_bic:
+                best_bic = bic
+                best_model = model
+        return best_model
 
 
 class SelectorDIC(ModelSelector):
