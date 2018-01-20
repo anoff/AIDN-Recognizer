@@ -83,13 +83,16 @@ class SelectorBIC(ModelSelector):
         n = self.X.shape[0]
         best_bic = float('Inf')
         best_model = None
-        for p in range(self.min_n_components, self.max_n_components):
-            model = self.base_model(num_states=p)
-            log_l = model.score(self.X, self.lengths)
-            bic = -2 * log_l + p * np.log(n)
-            if bic < best_bic:
-                best_bic = bic
-                best_model = model
+        for p in range(self.min_n_components, self.max_n_components + 1):
+            try:
+                model = self.base_model(num_states=p)
+                log_l = model.score(self.X, self.lengths)
+                bic = -2 * log_l + p * np.log(n)
+                if bic < best_bic:
+                    best_bic = bic
+                    best_model = model
+            except:
+                continue
         return best_model
 
 
@@ -114,17 +117,20 @@ class SelectorDIC(ModelSelector):
         best_dic = float('-Inf') # Higher = Better
         best_model = None
         for p in range(self.min_n_components, self.max_n_components):
-            model = self.base_model(num_states=p)
-            log_l = model.score(self.X, self.lengths)
-            # calculate all scores
-            log_l_all = 0
-            for word in self.words:
-                word_x, word_length = self.hwords[word]
-                log_l_all += model.score(word_x, word_length)
-            dic = log_l - 1 / (m - 1) * (log_l_all - log_l)
-            if dic > best_dic:
-                best_dic = dic
-                best_model = model
+            try:
+                model = self.base_model(num_states=p)
+                log_l = model.score(self.X, self.lengths)
+                # calculate all scores
+                log_l_all = 0
+                for word in self.words:
+                    word_x, word_length = self.hwords[word]
+                    log_l_all += model.score(word_x, word_length)
+                dic = log_l - 1 / (m - 1) * (log_l_all - log_l)
+                if dic > best_dic:
+                    best_dic = dic
+                    best_model = model
+            except:
+                continue
         return best_model
 
 
