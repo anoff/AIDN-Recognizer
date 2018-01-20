@@ -146,6 +146,9 @@ class SelectorCV(ModelSelector):
         best_cv = float('-Inf')
         best_model = None
         for p in range(self.min_n_components, self.max_n_components + 1):
+            splits = min(3, len(self.sequences))
+            if splits < 2:
+                continue
             split_method = KFold(min(3, len(self.sequences)))
             for cv_train_idx, cv_test_idx in split_method.split(self.sequences):
                 train_x, train_length = combine_sequences(cv_train_idx, self.sequences)
