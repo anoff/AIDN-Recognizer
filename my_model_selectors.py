@@ -136,18 +136,21 @@ class SelectorCV(ModelSelector):
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-        # TODO implement model selection using CV
+        # implement model selection using CV
         best_cv = float('-Inf')
         best_model = None
-        for p in range(self.min_n_components, self.max_n_components):
-            split_method = KFold(3)
+        for p in range(self.min_n_components, self.max_n_components + 1):
+            split_method = KFold(min(3, len(self.sequences)))
             for cv_train_idx, cv_test_idx in split_method.split(self.sequences):
                 train_x, train_length = combine_sequences(cv_train_idx, self.sequences)
                 test_x, test_length = combine_sequences(cv_test_idx, self.sequences)
-                model = self.base_model(num_states=p).fit(train_x, train_length)
-                cv = model.score(test_x, test_length)
+                try:
+                    model = self.base_model(num_states=p).fit(train_x, train_length)
+                    cv = model.score(test_x, test_length)
 
-                if cv > best_cv:
-                    best_cv = cv
-                    best_model = model
+                    if cv > best_cv:
+                        best_cv = cv
+                        best_model = model
+                except:
+                    continue
         return best_model
