@@ -80,14 +80,16 @@ class SelectorBIC(ModelSelector):
         """
         # implement model selection based on BIC scores
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        n = self.X.shape[0]
+        n_points = self.X.shape[0]
+        n_features = self.X.shape[1]
         best_bic = float('Inf')
         best_model = None
-        for p in range(self.min_n_components, self.max_n_components + 1):
+        for c in range(self.min_n_components, self.max_n_components + 1):
+            p = c**2 + 2*c*n_features -1
             try:
                 model = self.base_model(num_states=p)
                 log_l = model.score(self.X, self.lengths)
-                bic = -2 * log_l + p * np.log(n)
+                bic = -2 * log_l + p * np.log(n_points)
                 if bic < best_bic:
                     best_bic = bic
                     best_model = model
@@ -121,11 +123,16 @@ class SelectorDIC(ModelSelector):
                 model = self.base_model(num_states=p)
                 log_l = model.score(self.X, self.lengths)
                 # calculate all scores
-                log_l_all = 0
-                for word in self.words:
+                anti_log_l = 0
+                wc = 0
+                for word in self.hwords:
+                    if word == self.this_word:
+                        continue
                     word_x, word_length = self.hwords[word]
-                    log_l_all += model.score(word_x, word_length)
-                dic = log_l - 1 / (m - 1) * (log_l_all - log_l)
+                    anti_log_l += model.score(word_x, word_length)
+                    wc += 1 
+                anti_log_l /= float(wc)
+                dic = log_l - 1 / (m - 1) * anti_log_l
                 if dic > best_dic:
                     best_dic = dic
                     best_model = model
