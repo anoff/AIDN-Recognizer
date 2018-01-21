@@ -80,23 +80,22 @@ class SelectorBIC(ModelSelector):
         """
         # implement model selection based on BIC scores
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        n_points = self.X.shape[0]
+        log_n = np.log(self.X.shape[0])
         n_features = self.X.shape[1]
         best_bic = float('Inf')
         best_model = None
         for c in range(self.min_n_components, self.max_n_components + 1):
-            p = c**2 + 2*c*n_features -1
+            p = c * (c -1) + 2 * n_features * c
+            model = self.base_model(num_states=c)
             try:
-                model = self.base_model(num_states=p)
                 log_l = model.score(self.X, self.lengths)
-                bic = -2 * log_l + p * np.log(n_points)
-                if bic < best_bic:
-                    best_bic = bic
-                    best_model = model
             except:
                 continue
+            bic = -2 * log_l + p * log_n
+            if bic < best_bic:
+                best_bic = bic
+                best_model = model
         return best_model
-
 
 class SelectorDIC(ModelSelector):
     ''' select best model based on Discriminative Information Criterion
@@ -139,7 +138,6 @@ class SelectorDIC(ModelSelector):
             except:
                 continue
         return best_model
-
 
 class SelectorCV(ModelSelector):
     ''' select best model based on average log Likelihood of cross-validation folds
