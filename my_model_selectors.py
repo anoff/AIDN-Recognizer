@@ -85,7 +85,7 @@ class SelectorBIC(ModelSelector):
         best_bic = float('Inf')
         best_model = None
         for c in range(self.min_n_components, self.max_n_components + 1):
-            p = c * (c -1) + 2 * n_features * c
+            p = c ** 2 + 2 * n_features * c - 1
             model = self.base_model(num_states=c)
             try:
                 log_l = model.score(self.X, self.lengths)
@@ -131,7 +131,7 @@ class SelectorDIC(ModelSelector):
                     anti_log_l += model.score(word_x, word_length)
                     wc += 1 
                 anti_log_l /= float(wc)
-                dic = log_l - 1 / (m - 1) * anti_log_l
+                dic = log_l - 1 / anti_log_l
                 if dic > best_dic:
                     best_dic = dic
                     best_model = model
@@ -154,17 +154,18 @@ class SelectorCV(ModelSelector):
             splits = min(3, len(self.sequences))
             if splits < 2:
                 continue
-            split_method = KFold(min(3, len(self.sequences)))
+            split_method = KFold(splits)
+            accum_score = 0
             for cv_train_idx, cv_test_idx in split_method.split(self.sequences):
-                train_x, train_length = combine_sequences(cv_train_idx, self.sequences)
+                self.X, self.lengths = combine_sequences(cv_train_idx, self.sequences) # make the model automatically fit to training
                 test_x, test_length = combine_sequences(cv_test_idx, self.sequences)
                 try:
-                    model = self.base_model(num_states=p).fit(train_x, train_length)
-                    cv = model.score(test_x, test_length)
-
-                    if cv > best_cv:
-                        best_cv = cv
-                        best_model = model
+                    model = self.base_model(num_states=p)
+                    accum_score += model.score(test_x, test_length)
+            cv = accum_score / float(splits) # normalize over all model splits
+            if cv > best_cv:
+                best_cv = cv
+                best_model = model
                 except:
                     continue
         return best_model
